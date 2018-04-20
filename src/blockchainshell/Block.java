@@ -9,22 +9,22 @@ package blockchainshell;
  *
  * @author Dean
  */
+import java.io.Serializable;
 import java.security.MessageDigest;
-import java.util.Date;
 
-public class Block {
+public class Block implements Serializable {
 
     public String hash;
     public String previousHash;
-    private String data; 
-    private long timeStamp; //as number of milliseconds since 1/1/1970.
+    private String data;
+    private long timeStamp;
     private int nonce;
 
     //Block Constructor.
     public Block(String data, String previousHash) {
         this.data = data;
         this.previousHash = previousHash;
-        this.timeStamp = new Date().getTime();
+        this.timeStamp = System.currentTimeMillis();
         this.hash = calculateHash();
     }
 
@@ -49,18 +49,33 @@ public class Block {
 
     //Calculate new hash based on blocks contents
     public String calculateHash() {
-        return ("");
+        return applySha256(
+                previousHash
+                + Long.toString(timeStamp)
+                + Integer.toString(nonce)
+                + data);
     }
 
     public void mineBlock(int difficulty) {
-        String target = new String(new char[difficulty]).replace('\0', '0'); //Create a string with difficulty * "0" 
-        
-        // YOUR TASK
-
+        do {
+            nonce++;
+            hash = calculateHash();
+        } while (!isValidHash(hash, difficulty));
+    }
+    
+    private static boolean isValidHash(String hash, int difficulty) {
+        return firstNCharactersAre(hash, difficulty, '0');
+    }
+    
+    private static boolean firstNCharactersAre(String hash, int difficulty, char c) {
+        if (hash.length() < difficulty) return false;
+        for (int i = 0; i < difficulty; i++) {
+            if (hash.charAt(i) != c) return false;
+        }
+        return true;
     }
 
     public String getHash() {
-        
         return hash;
     }
 
