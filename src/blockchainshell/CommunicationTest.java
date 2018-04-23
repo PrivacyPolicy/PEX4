@@ -14,6 +14,12 @@ public class CommunicationTest {
     private PolyChain blockChain;
 
     public CommunicationTest() throws Exception {
+        Transaction transaction = new Transaction.Builder()
+                .setAmount(5.3)
+                .setPublicKey("HJIGEHG")
+                .setRecipientPublicKey("GHIOEGHIEO")
+                .setSignature("GEJGEOIJEG")
+                .build();
         String url = "localhost"; //"cop3330.hpc.lab";
         short port = 2018;
         InetAddress address = InetAddress.getByName(url);

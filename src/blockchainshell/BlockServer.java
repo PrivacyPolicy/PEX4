@@ -123,15 +123,15 @@ public class BlockServer {
                         System.out.println("Block class not found");
 
                     }
-                    pc.addBlock(newBlock);
+                    
                     String fav;
-                    if (pc.isChainValid()) {
+                    if (pc.chainWouldBeValidWith(newBlock)) {
+                        pc.addBlock(newBlock);
                         fav = "BLOCK_ACCEPTED";
                         messageBlock(newBlock);
                     } else {
                         fav = "BLOCK_REJECTED";
                     }
-
                     out.writeObject(fav);
                     out.flush();
                 }
