@@ -17,9 +17,7 @@ import java.util.HashSet;
 public class BlockServer {
 
     private static final int PORT = 2018;
-    private static HashSet<String> names = new HashSet<>();
-    private static HashSet<String> userNames = new HashSet<>();
-    private static HashSet<ObjectOutputStream> writers = new HashSet<>();
+    private static HashSet<Connection> connections = new HashSet<>();
     private static int usersConnected = 0;
     private static PolyChain pc;
 
@@ -46,7 +44,8 @@ public class BlockServer {
     private static String names() {
         StringBuilder nameList = new StringBuilder();
 
-        for (String name : userNames) {
+        for (Connection connection : connections) {
+            String name = connection.clientName;
             nameList.append(", ").append(name);
         }
 
@@ -72,6 +71,7 @@ public class BlockServer {
             int count = 0;
             String response = "";
             String name = "";
+            Connection connection = null;
             try {
                 out = new ObjectOutputStream(socket.getOutputStream());
                 System.out.println("got output stream");
@@ -89,21 +89,20 @@ public class BlockServer {
                 name = name.toLowerCase();
                 System.out.println(name + " has joined the network");
 
-                synchronized (names) {
+                synchronized (connections) {
                     System.out.println("Now conducting duplicate checks");
-                    if (names.contains(name)) {
+                    if (nameAlreadyExists(connections, name)) {
                         System.out.println("We found a duplicate");
                         name += count++;
                     }
                 }
 
-                out.writeObject("NAME_ACCEPTED \n");
+                out.writeObject("NAME_ACCEPTED: " + name + "\n");
                 out.flush();
                 System.out.println(name + " connected. IP: " + socket.getInetAddress().getHostAddress());
 
-                userNames.add(name);
-                names.add(name);
-                writers.add(out);
+                connection = new Connection(name, out);
+                connections.add(connection);
                 sendMessagesToAll("CONNECT " + name);
                 out.writeObject("INFO " + ++usersConnected + names() + "\n");
                 out.flush();
@@ -124,9 +123,7 @@ public class BlockServer {
             } catch (IOException e) {
                 {
                     System.out.println(name + " disconnected.");
-                    userNames.remove(name);
-                    names.remove(serverSideName);
-                    writers.remove(out);
+                    connections.remove(connection);
                     sendMessagesToAll("DISCONNECT" + name);
                     usersConnected--;
                 }
@@ -169,15 +166,22 @@ public class BlockServer {
             out.flush();
         }
         
+        private static boolean nameAlreadyExists(HashSet<Connection> connections, String name) {
+            for (Connection connection : connections) {
+                if (connection.clientName.equals(name)) return true;
+            }
+            return false;
+        }
+        
         private static void sendObject(Object object) {
-            if (!writers.isEmpty()) {
+            if (!connections.isEmpty()) {
 
-                for (ObjectOutputStream writer : writers) {
+                for (Connection connection : connections) {
                     try {
-                        writer.writeObject(object);
-                        writer.flush();
+                        connection.outStream.writeObject(object);
+                        connection.outStream.flush();
                     } catch (IOException ex) {
-                        writers.remove(writer);
+                        connections.remove(connection);
                         usersConnected--;
                     }
                 }

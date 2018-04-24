@@ -11,10 +11,11 @@ import pex4.ReadThread;
 
 public class CommunicationTest {
     
+    private String username = "Olaf";
+    
     private PolyChain blockChain;
 
     public CommunicationTest() throws Exception {
-        String username = "Olaf";
         String url = "localhost"; //"cop3330.hpc.lab";
         short port = 2018;
         InetAddress address = InetAddress.getByName(url);
@@ -24,6 +25,10 @@ public class CommunicationTest {
         ReadThread thread = new ReadThread(inStream, new ReadThread.ReadCallback() {
             @Override
             public void receivedString(String response) {
+                String acceptedString = "NAME_ACCEPTED: ";
+                if (response.startsWith(acceptedString)) {
+                    username = response.substring(acceptedString.length()).trim();
+                }
                 System.out.println("Recieved message: " + response.trim());
             }
 
