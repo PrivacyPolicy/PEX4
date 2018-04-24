@@ -7,21 +7,39 @@ package blockchainshell;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PolyChain implements Serializable {
 
+    private HashMap<String, Double> wallets = new HashMap<>();
     private ArrayList<Block> blockchain = new ArrayList<>();
+    private ArrayList<Transaction> transactions = new ArrayList<>();
     private static int difficulty = 5;
 
     public PolyChain() {
     }
+    
+    public void addTransaction(Transaction t) {
+        transactions.add(t);
+        addToBalance(wallets, t.getFrom(), -t.getAmount());
+        addToBalance(wallets, t.getTo(), t.getAmount());
+    }
 
     public void addBlock(Block b) {
         blockchain.add(b);
+        addToBalance(wallets, b.getOwner(), 1);
     }
 
     public ArrayList<Block> getBlockchain() {
         return blockchain;
+    }
+    
+    public ArrayList<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public HashMap<String, Double> getWallets() {
+        return wallets;
     }
 
     public void printBlock() {
@@ -69,6 +87,19 @@ public class PolyChain implements Serializable {
             return false;
         }
         return true;
+    }
+
+    public boolean isValidTransaction(Transaction newTransaction) {
+        if (newTransaction.getAmount() <= 0) {
+            return false;
+        }
+        double amountInSendersWallet = wallets.get(newTransaction.getFrom());
+        return amountInSendersWallet >= newTransaction.getAmount();
+    }
+
+    private void addToBalance(HashMap<String, Double> wallets, String person, double amount) {
+        double oldBalance = wallets.getOrDefault(person, (double) 0);
+        wallets.put(person, oldBalance + amount);
     }
 
 }

@@ -11,8 +11,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 
@@ -73,7 +71,6 @@ public class BlockServer {
         public void run() {
             int count = 0;
             String response = "";
-            Block newBlock = null;
             String name = "";
             try {
                 out = new ObjectOutputStream(socket.getOutputStream());
@@ -107,7 +104,7 @@ public class BlockServer {
                 userNames.add(name);
                 names.add(name);
                 writers.add(out);
-                messageAll("CONNECT " + name);
+                sendMessagesToAll("CONNECT " + name);
                 out.writeObject("INFO " + ++usersConnected + names() + "\n");
                 out.flush();
 
@@ -118,22 +115,10 @@ public class BlockServer {
 
                 while (true) {
                     try {
-                        newBlock = ((Block) (in.readObject()));
+                        readObject();
                     } catch (ClassNotFoundException ex) {
-                        System.out.println("Block class not found");
-
+                        System.err.println("Class not found");
                     }
-                    
-                    String fav;
-                    if (pc.chainWouldBeValidWith(newBlock)) {
-                        pc.addBlock(newBlock);
-                        fav = "BLOCK_ACCEPTED";
-                        messageBlock(newBlock);
-                    } else {
-                        fav = "BLOCK_REJECTED";
-                    }
-                    out.writeObject(fav);
-                    out.flush();
                 }
 
             } catch (IOException e) {
@@ -142,7 +127,7 @@ public class BlockServer {
                     userNames.remove(name);
                     names.remove(serverSideName);
                     writers.remove(out);
-                    messageAll("DISCONNECT" + name);
+                    sendMessagesToAll("DISCONNECT" + name);
                     usersConnected--;
                 }
             } finally {
@@ -153,42 +138,68 @@ public class BlockServer {
             }
         }
 
-        private static void messageAll(String... messages
-        ) {
-            System.out.println("messaging all");
-            if (!writers.isEmpty()) {
-                for (String message : messages) {
-                    System.out.println("sending " + message + " to all");
-                    for (ObjectOutputStream writer : writers) {
-                        try {
-                            writer.writeObject(message + "\n");
-                            writer.flush();
-                        } catch (IOException ex) {
-                            userNames.remove(writers);
-                            writers.remove(writer);
-                            usersConnected--;
-
-                        }
-                    }
+        private void readObject() throws IOException, ClassNotFoundException {
+            Object response = in.readObject();
+            String message;
+            if (response instanceof Block) {
+                Block newBlock = (Block) response;
+                if (pc.chainWouldBeValidWith(newBlock)) {
+                    pc.addBlock(newBlock);
+                    message = "BLOCK_ACCEPTED";
+                    sendBlockToAll(newBlock);
+                } else {
+                    message = "BLOCK_REJECTED";
                 }
+            } else if (response instanceof PolyChain) {
+                message = "DO NOT SEND ME A POLYCHAIN YOU IDIOT";
+            } else if (response instanceof Transaction) {
+                Transaction newTransaction = (Transaction) response;
+                if (pc.isValidTransaction(newTransaction)) {
+                    pc.addTransaction(newTransaction);
+                    sendTransactionToAll(newTransaction);
+                    message = "TRANSACTION_ACCEPTED";
+                } else {
+                    message = "TRANSACTION_REJECTED_STOP_TRYING_TO_STEAL_MY_MONEY";
+                }
+            } else {
+                message = "UKNOWN_OBJECT_SENT";
             }
+            
+            out.writeObject(message);
+            out.flush();
         }
-
-        private static void messageBlock(Block nb) {
-            System.out.println("messaging all a new block");
+        
+        private static void sendObject(Object object) {
             if (!writers.isEmpty()) {
 
                 for (ObjectOutputStream writer : writers) {
                     try {
-                        writer.writeObject(nb);
+                        writer.writeObject(object);
                         writer.flush();
                     } catch (IOException ex) {
-                        userNames.remove(writers);
                         writers.remove(writer);
                         usersConnected--;
                     }
                 }
             }
+        }
+
+        private static void sendMessagesToAll(String... messages) {
+            System.out.println("messaging all");
+            for (String message : messages) {
+                System.out.println("sending " + message + " to all");
+                sendObject(message + "\n");
+            }
+        }
+
+        private static void sendBlockToAll(Block nb) {
+            System.out.println("messaging all a new block");
+            sendObject(nb);
+        }
+
+        private static void sendTransactionToAll(Transaction transaction) {
+            System.out.println("messaging all a new transaction");
+            sendObject(transaction);
         }
     }
 

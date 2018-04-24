@@ -16,13 +16,13 @@ public class Block implements Serializable {
 
     public String hash;
     public String previousHash;
-    private String data;
+    private String owner;
     private long timeStamp;
     private int nonce;
 
     //Block Constructor.
-    public Block(String data, String previousHash) {
-        this.data = data;
+    public Block(String owner, String previousHash) {
+        this.owner = owner;
         this.previousHash = previousHash;
         this.timeStamp = System.currentTimeMillis();
         this.hash = calculateHash();
@@ -53,7 +53,7 @@ public class Block implements Serializable {
                 previousHash
                 + Long.toString(timeStamp)
                 + Integer.toString(nonce)
-                + data);
+                + owner);
     }
 
     public void mineBlock(int difficulty) {
@@ -77,6 +77,10 @@ public class Block implements Serializable {
 
     public String getHash() {
         return hash;
+    }
+
+    public String getOwner() {
+        return owner;
     }
 
 }

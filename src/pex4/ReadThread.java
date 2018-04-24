@@ -2,6 +2,7 @@ package pex4;
 
 import blockchainshell.Block;
 import blockchainshell.PolyChain;
+import blockchainshell.Transaction;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
@@ -27,6 +28,8 @@ public class ReadThread extends Thread {
                     callback.receivedBlock((Block) response);
                 } else if (response instanceof PolyChain) {
                     callback.receivedBlockChain((PolyChain) response);
+                } else if (response instanceof Transaction) {
+                    callback.receivedTransaction((Transaction) response);
                 } else {
                     callback.receivedString("Unknown response (" + response.getClass() + ")");
                 }
@@ -50,6 +53,8 @@ public class ReadThread extends Thread {
         public abstract void receivedBlock(Block response);
 
         public abstract void receivedBlockChain(PolyChain response);
+
+        public abstract void receivedTransaction(Transaction response);
         
     }
 

@@ -1,36 +1,52 @@
 package blockchainshell;
 
-public class Transaction {
-    
-    private final String publicKey;
-    private final String recipientPublicKey;
-    private final double amount;
-    private final String signature;
+import java.io.Serializable;
 
-    private Transaction(String publicKey, String recipientPublicKey, double amount, String signature) {
-        this.publicKey = publicKey;
-        this.recipientPublicKey = recipientPublicKey;
+public class Transaction implements Serializable {
+    
+    private final String from;
+    private final String to;
+    private final double amount;
+
+    public Transaction(String from, String to, double amount) {
+        this.from = from;
+        this.to = to;
         this.amount = amount;
-        this.signature = signature;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s->%s (%f)", from, to, amount);
     }
     
     public static class Builder {
 
-        private String publicKey;
-        private String recipientPublicKey;
+        private String from;
+        private String to;
         private double amount;
-        private String signature;
 
         public Builder() {
         }
 
-        public Builder setPublicKey(String publicKey) {
-            this.publicKey = publicKey;
+        public Builder setFrom(String from) {
+            this.from = from;
             return this;
         }
 
-        public Builder setRecipientPublicKey(String recipientPublicKey) {
-            this.recipientPublicKey = recipientPublicKey;
+        public Builder setTo(String to) {
+            this.to = to;
             return this;
         }
 
@@ -39,13 +55,8 @@ public class Transaction {
             return this;
         }
 
-        public Builder setSignature(String signature) {
-            this.signature = signature;
-            return this;
-        }
-
         public Transaction build() {
-            return new Transaction(publicKey, recipientPublicKey, amount, signature);
+            return new Transaction(from, to, amount);
         }
 
     }

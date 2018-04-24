@@ -14,12 +14,7 @@ public class CommunicationTest {
     private PolyChain blockChain;
 
     public CommunicationTest() throws Exception {
-        Transaction transaction = new Transaction.Builder()
-                .setAmount(5.3)
-                .setPublicKey("HJIGEHG")
-                .setRecipientPublicKey("GHIOEGHIEO")
-                .setSignature("GEJGEOIJEG")
-                .build();
+        String username = "Olaf";
         String url = "localhost"; //"cop3330.hpc.lab";
         short port = 2018;
         InetAddress address = InetAddress.getByName(url);
@@ -36,6 +31,16 @@ public class CommunicationTest {
             public void receivedBlock(Block response) {
                 System.out.println("Received Block: " + response.getHash());
                 blockChain.addBlock(response);
+                Transaction transaction = new Transaction.Builder()
+                        .setAmount(1.5)
+                        .setFrom(username)
+                        .setTo("WhoKnows")
+                        .build();
+                try {
+                    sendTransaction(outStream, transaction);
+                } catch (IOException ex) {
+                    Logger.getLogger(CommunicationTest.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
@@ -43,16 +48,24 @@ public class CommunicationTest {
                 try {
                     System.out.println("Recieved blockchain: " + response.getBlockchain().toString());
                     blockChain = response;
-                    Block b = new Block("modena", getLatestHash());
+                    Block b = new Block(username, getLatestHash());
                     b.mineBlock(5);
                     sendBlock(outStream, b);
                 } catch (IOException ex) {
                     Logger.getLogger(CommunicationTest.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
+
+            @Override
+            public void receivedTransaction(Transaction response) {
+                System.out.println("Recieved transaction: " + response);
+                blockChain.addTransaction(response);
+            }
         });
         thread.start();
-        sendMessage(outStream, "modena");
+        
+        // Test sending username
+        sendMessage(outStream, username);
     }
     
     private String getLatestHash() {
@@ -73,6 +86,12 @@ public class CommunicationTest {
     private static void sendBlock(ObjectOutputStream outStream, Block b) throws IOException {
         System.out.println("Sending block: " + b.getHash());
         outStream.writeObject(b);
+        outStream.flush();
+    }
+
+    private static void sendTransaction(ObjectOutputStream outStream, Transaction t) throws IOException {
+        System.out.println("Sending transaction: " + t);
+        outStream.writeObject(t);
         outStream.flush();
     }
     
